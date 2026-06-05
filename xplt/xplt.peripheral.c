@@ -12,6 +12,7 @@
 #include <gmp_core.h>
 
 #include "user_main.h"
+#include "ctl_main.h"
 #include <xplt.peripheral.h>
 
 #include <ctl/component/dsa/dsa_trigger.h>
@@ -206,13 +207,11 @@ interrupt void INT_IRIS_CAN_0_ISR(void)
         CAN_readMessage(IRIS_CAN_BASE, 2, (uint16_t*)recv_content);
         CAN_clearInterruptStatus(CANA_BASE, 2);
 
-        //        // set target value
-        //#if BUILD_LEVEL == 1
-        //        // For level 1 Set target voltage
-        //        ctl_set_gfl_inv_voltage_openloop(&inv_ctrl, float2ctrl((float)recv_content[0].i32 / CAN_SCALE_FACTOR),
-        //                                         float2ctrl((float)recv_content[1].i32 / CAN_SCALE_FACTOR));
-        //
-        //#endif // BUILD_LEVEL
+#if BUILD_LEVEL == 5
+        // CAN 0x202: i32[0] = absolute revolutions, i32[1] = fractional position * 10000.
+        ctl_set_position_target_rev_pu(recv_content[0].i32,
+                                       (parameter_gt)recv_content[1].i32 / (parameter_gt)CAN_SCALE_FACTOR);
+#endif // BUILD_LEVEL == 5
     }
 
     //
@@ -257,13 +256,17 @@ void send_monitor_data(void)
     CAN_sendMessage(IRIS_CAN_BASE, 5, 8, (uint16_t*)tran_content);
 
     // 0x203: Monitor Velocity following
-//    tran_content[0].i32 = (int32_t)(motion_ctrl.spd_if->speed * CAN_SCALE_FACTOR);
-//    tran_content[1].i32 = (int32_t)(motion_ctrl.target_velocity * CAN_SCALE_FACTOR);
+    tran_content[0].i32 = (int32_t)(spd_enc.encif.speed * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(mech_ctrl.target_velocity * CAN_SCALE_FACTOR);
     CAN_sendMessage(IRIS_CAN_BASE, 6, 8, (uint16_t*)tran_content);
 
-    // 0x204: TODO Monitor elec-position following
-//    tran_content[0].i32 = (int32_t)(motion_ctrl.pos_if->position * CAN_SCALE_FACTOR);
-//    tran_content[1].i32 = (int32_t)(motion_ctrl.target_angle * CAN_SCALE_FACTOR);
+#if BUILD_LEVEL == 5
+    tran_content[0].i32 = (int32_t)(mech_ctrl.pos_if->position * CAN_SCALE_FACTOR);
+    tran_content[1].i32 = (int32_t)(mech_ctrl.target_angle * CAN_SCALE_FACTOR);
+#else
+    tran_content[0].i32 = 0;
+    tran_content[1].i32 = 0;
+#endif // BUILD_LEVEL == 5
     CAN_sendMessage(IRIS_CAN_BASE, 7, 8, (uint16_t*)tran_content);
 
     // 0x205: Monitor DC Voltage / ISR tick

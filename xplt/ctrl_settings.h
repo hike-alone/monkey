@@ -57,7 +57,13 @@
 // Speed & Position division
 #define CTRL_MECH_DIV (5)
 
-
+// Position servo trajectory planner
+#define CTRL_POS_TRAJ_ENABLE (1)
+#define CTRL_POS_TRAJ_MAX_VEL_PU (0.10f)
+#define CTRL_POS_TRAJ_MAX_ACCEL_PU (0.20f)
+#define CTRL_POS_TRAJ_MAX_JERK_PU (1.00f)
+#define CTRL_POS_TRAJ_TRACKING_ERR_REV (5.0f)
+#define CTRL_POS_TRAJ_FAULT_TIME_MS (500.0f)
 ///////////////////////////////////////////////////////////
 // Controller Base value
 

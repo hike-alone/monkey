@@ -25,6 +25,7 @@
 
 #include <ctl/component/motor_control/current_loop/foc_core.h>
 #include <ctl/component/motor_control/mechanical_loop/basic_mech_ctrl.h>
+#include <ctl/component/motor_control/motion/s_curve_traj.h>
 #include <ctl/component/motor_control/observer/pmsm_esmo.h>
 
 #include <ctl/framework/cia402_state_machine.h>
@@ -62,6 +63,10 @@ extern spwm_modulator_t spwm;
 // controller body: Current controller, Command dispatcher, motion controller
 extern mc_foc_core_t mtr_ctrl;
 extern ctl_mech_ctrl_t mech_ctrl;
+
+#if BUILD_LEVEL == 5 && CTRL_POS_TRAJ_ENABLE
+extern ctl_scurve_planner_t pos_traj;
+#endif // BUILD_LEVEL == 5 && CTRL_POS_TRAJ_ENABLE
 
 // Observer: SMO, FO, Speed measurement.
 extern ctl_slope_f_pu_controller rg;
@@ -110,6 +115,11 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
         ctl_step_spd_calc(&spd_enc);
 
 #if BUILD_LEVEL > 3
+#if BUILD_LEVEL == 5 && CTRL_POS_TRAJ_ENABLE
+        ctl_step_scurve_planner_tdm(&pos_traj);
+        ctl_set_mech_target_position(&mech_ctrl, pos_traj.planner_revs, pos_traj.planner_angle);
+#endif // BUILD_LEVEL == 5 && CTRL_POS_TRAJ_ENABLE
+
         // motion controller
         ctl_step_mech_ctrl(&mech_ctrl);
 
